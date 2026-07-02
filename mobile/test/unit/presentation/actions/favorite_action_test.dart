@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:immich_mobile/domain/models/asset/base_asset.model.dart';
 import 'package:immich_mobile/generated/translations.g.dart';
@@ -27,27 +28,33 @@ void main() {
   group('FavoriteAction', () {
     testWidgets('favorites the eligible owned assets', (tester) async {
       final asset = owned();
+      final view = await tester.pumpTestAction(context, FavoriteAction(assets: [asset]));
 
-      await tester.pumpTestAction(context, FavoriteAction(assets: [asset]));
+      expect(view, isA<FavoriteView>());
+      expect(view.icon, Icons.favorite_border_rounded);
+      expect(view.label, StaticTranslations.instance.favorite);
 
       verify(() => assetService.updateFavorite([asset.id], true)).called(1);
     });
 
     testWidgets('unfavorite the eligible owned assets', (tester) async {
       final asset = owned(isFavorite: true);
+      final view = await tester.pumpTestAction(context, FavoriteAction(assets: [asset]));
 
-      await tester.pumpTestAction(context, FavoriteAction(assets: [asset]));
+      expect(view, isA<UnfavoriteView>());
+      expect(view.icon, Icons.favorite_rounded);
+      expect(view.label, StaticTranslations.instance.unfavorite);
 
       verify(() => assetService.updateFavorite([asset.id], false)).called(1);
     });
 
-    testWidgets('ignores assets owned by someone else', (tester) async {
-      final mine = owned();
+    testWidgets('dispatches on owned state, ignoring assets owned by others', (tester) async {
+      final mine = owned(isFavorite: true);
       final theirs = RemoteAssetFactory.create();
+      final view = await tester.pumpTestAction(context, FavoriteAction(assets: [mine, theirs]));
+      expect(view, isA<UnfavoriteView>());
 
-      await tester.pumpTestAction(context, FavoriteAction(assets: [mine, theirs]));
-
-      verify(() => assetService.updateFavorite([mine.id], true)).called(1);
+      verify(() => assetService.updateFavorite([mine.id], false)).called(1);
     });
 
     testWidgets('batches every eligible owned asset into a single call', (tester) async {
@@ -59,7 +66,7 @@ void main() {
       verify(() => assetService.updateFavorite([first.id, second.id], true)).called(1);
     });
 
-    testWidgets('skips owned assets already in the target state', (tester) async {
+    testWidgets('favorites only the owned assets not already favorite', (tester) async {
       final stale = owned();
       final alreadyFavorite = owned(isFavorite: true);
 
