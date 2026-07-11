@@ -6,6 +6,8 @@
   import { useActions, type ActionArray } from '$lib/actions/use-actions';
   import NavigationBar from '$lib/components/shared-components/navigation-bar/NavigationBar.svelte';
   import UserSidebar from '$lib/components/shared-components/side-bar/UserSidebar.svelte';
+  import { mediaQueryManager } from '$lib/stores/media-query-manager.svelte';
+  import { sidebarWidth } from '$lib/stores/preferences.store';
   import type { HeaderButtonActionItem } from '$lib/types';
   import { openFileUploadDialog } from '$lib/utils/file-uploader';
   import { Button, ContextMenuButton, HStack, isMenuItemType, type MenuItemType } from '@immich/ui';
@@ -44,6 +46,7 @@
 
   let scrollbarClass = $derived(scrollbar ? 'immich-scrollbar' : 'scrollbar-hidden');
   let hasTitleClass = $derived(title ? 'top-16 h-[calc(100%-(--spacing(16)))]' : 'top-0 h-full');
+  const gridTemplateColumns = $derived(mediaQueryManager.isFullSidebar ? `${$sidebarWidth}px auto` : undefined);
 </script>
 
 <header>
@@ -57,6 +60,7 @@
     {hideNavbar ? 'h-dvh' : 'h-[calc(100dvh-var(--navbar-height))] max-md:h-[calc(100dvh-var(--navbar-height-md))]'}
     {hideNavbar ? 'pt-(--navbar-height)' : ''}
     {hideNavbar ? 'max-md:pt-(--navbar-height-md)' : ''}"
+  style:grid-template-columns={gridTemplateColumns}
 >
   {#if sidebar}
     {@render sidebar()}
